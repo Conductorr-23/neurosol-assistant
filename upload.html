@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload Knowledge Files</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+    }
+
+    h1 {
+      color: #c04ef3;
+    }
+
+    #dropzone {
+      border: 2px dashed #aaa;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      background-color: #f9f9f9;
+      transition: background-color 0.2s ease;
+    }
+
+    #dropzone.dragover {
+      background-color: #e0f7ff;
+    }
+
+    #log {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 14px;
+      background: #f2f2f2;
+      padding: 10px;
+      border-radius: 6px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+    }
+
+    /* 🔥 НОВЫЕ СТИЛИ ДЛЯ ЛОАДЕРА */
+    #statusMessage {
+        margin-top: 15px;
+        font-weight: bold;
+        color: #555;
+        display: flex; /* Для выравнивания иконки и текста */
+        align-items: center; /* Выравнивание по центру */
+        gap: 8px; /* Расстояние между иконкой и текстом */
+    }
+
+    .loader-icon {
+        width: 24px;
+        height: 24px;
+        animation: spin-y 1.5s linear infinite; /* Анимация вращения по Y */
+        vertical-align: middle;
+        /* Для вращения вокруг вертикальной оси */
+        transform-origin: center center; /* Убедимся, что вращение происходит вокруг центра */
+    }
+
+    @keyframes spin-y {
+        from { transform: rotateY(0deg); }
+        to { transform: rotateY(360deg); }
+    }
+
+
+    input[type="file"] {
+      display: none; /* Скрываем стандартный инпут */
+    }
+
+    button {
+      background-color: #c04ef3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Загрузка файлов базы знаний</h1>
+
+  <div id="dropzone">
+    Перетащите файлы сюда или <label for="fileInput">выберите их</label>
+    <input type="file" id="fileInput" multiple accept=".txt,.pdf,.docx" />
+  </div>
+  <div id="statusMessage" style="margin-top: 15px; font-weight: bold; color: #555;"></div>
+  <div id="log"></div>
+
+  <script src="upload.js"></script>
+</body>
+</html>

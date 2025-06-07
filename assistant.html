@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroSOL Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="bot-icon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="chat-wrapper">
+    <div class="chat-logo">
+      <img src="logo.jpeg" alt="NeuroSOL Logo" />
+    </div>
+    <div class="chat-header">NeuroSOL Assistant</div>
+
+    <!-- Здесь будет динамически вставлен блок онбординга -->
+    <div id="onboarding-section"></div>
+    <!-- /онбординг -->
+
+    <div id="chat" class="chat"></div>
+
+    <form id="form" class="chat-footer">
+      <textarea id="input" placeholder="Ask your question..."></textarea>
+      <button type="submit">Send</button>
+    </form>
+
+    <div class="disclaimers">
+      <p class="disclaimer-ai">
+        AI powered by ChatGPT may make errors. Please verify important information.
+      </p>
+      <p class="disclaimer-medical">
+        The information provided is for reference only and does not constitute medical advice. For medical consultation or diagnosis, please consult a professional.
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="assistant.js"></script>
+</body>
+</html>
