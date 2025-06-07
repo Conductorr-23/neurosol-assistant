@@ -126,7 +126,7 @@ body {
   line-height: 1.6;
   white-space: normal;
   word-wrap: break-word;
-  max-width: 75%;
+  /*max-width: 75%;*/
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 .chat-bubble.user {
