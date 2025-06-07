@@ -27,13 +27,18 @@ body {
   align-items: center;
   min-height: 100vh;
   overflow-x: hidden; /* 🔥 Запрещаем горизонтальный скролл для body */
+  height: 100%;
+    margin: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--bg);
 }
 
 .chat-wrapper {
   width: 100%;
   max-width: 720px;
   height: 100%; /* Занимает 100% доступной высоты родителя (body) */
-  max-height: 90vh; /* Ограничивает высоту до 90% высоты окна просмотра */
+  max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px /* или ваш внешний padding body */);
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -228,7 +233,7 @@ body {
 /* Медиа-запросы для мобильных устройств */
 @media (max-width: 600px) {
     body {
-        padding: 15px;
+        padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom) 15px;
     }
     .chat-wrapper {
         padding: 15px;
