@@ -26,9 +26,11 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  overflow-x: hidden; /* 🔥 Запрещаем горизонтальный скролл для body */
+  overflow-x: hidden; /* 🔥 Запрещаем горизонтальный скролл для body */  
+}
+html, body {
   height: 100%;
-    margin: 0;
+  margin: 0;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     background: var(--bg);
@@ -37,7 +39,7 @@ body {
 .chat-wrapper {
   width: 100%;
   max-width: 720px;
-  height: 100%; /* Занимает 100% доступной высоты родителя (body) */
+  /*height: 100%; /* Занимает 100% доступной высоты родителя (body) */
   max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px /* или ваш внешний padding body */);
   display: flex;
   flex-direction: column;
@@ -233,10 +235,10 @@ body {
 /* Медиа-запросы для мобильных устройств */
 @media (max-width: 600px) {
     body {
-        padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom) 15px;
+        padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
     }
     .chat-wrapper {
-        padding: 15px;
+        padding: 10px;
     }
     .chat-header {
         font-size: 20px;
