@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const chat = document.getElementById('chat');
     const onboardingSection = document.getElementById('onboarding-section');
 
+    // базовый URL для запросов
+    const API_BASE = window.location.origin;
+
     // История сообщений
     const messages = [];
 
@@ -43,11 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Функция для динамического создания блока онбординга
     function showOnboarding() {
         const container = onboardingSection;
-        // Очищаем, на случай повторного вызова
         container.innerHTML = '';
         container.style.display = 'block';
 
-        // Интро
         const introDiv = document.createElement('div');
         introDiv.className = 'onboarding-intro';
         introDiv.innerHTML = 
@@ -56,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
             'Please choose one of the questions below.';
         container.appendChild(introDiv);
 
-        // Вопросы-кнопки
         const questionsDiv = document.createElement('div');
         questionsDiv.id = 'onboarding';
         questionsDiv.className = 'onboarding-questions';
@@ -78,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         container.appendChild(questionsDiv);
 
-        // Надпись «или задайте свой вопрос»
         const orDiv = document.createElement('div');
         orDiv.className = 'onboarding-custom';
         orDiv.textContent = 'or ask your own question 👇';
@@ -145,16 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const question = input.value.trim();
         if (!question) return;
 
-        // Скрыть онбординг, если он есть
         onboardingSection.style.display = 'none';
 
-        // Добавить пользовательское сообщение
         messages.push({ role: 'user', content: question });
         appendMessage('user', question);
         input.value = '';
         input.style.height = 'auto';
 
-        // Фразы загрузки
         const statusPhrases = [
             'Searching for information',
             'Checking documents',
@@ -162,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         let phraseIndex = 0;
 
-        // Показать строку загрузки с первой фразой
         const loadingRow = createMessageRow('bot', statusPhrases[phraseIndex], true);
         loadingRow.querySelector('.chat-icon').innerHTML =
             '<img src="bot-icon.svg" class="spinner" width="32" height="32" alt="Loading...">';
@@ -171,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chat.appendChild(loadingRow);
         chat.scrollTop = chat.scrollHeight;
 
-        // Интервал для смены фраз
         const phraseInterval = setInterval(() => {
             phraseIndex = (phraseIndex + 1) % statusPhrases.length;
             loadingBubble.textContent = statusPhrases[phraseIndex];
@@ -181,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const requestBody = { question, messages, userId };
             if (currentSessionId) requestBody.sessionId = currentSessionId;
 
-            const res = await fetch('/chat', {
+            const res = await fetch(`${API_BASE}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody),
@@ -194,19 +188,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const data = await res.json();
 
-            // Остановить загрузочный цикл и убрать строку загрузки
             clearInterval(phraseInterval);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
 
-            // Добавить ответ бота
             const botAnswer = data.answer || '<span class="error">Sorry, I couldn\'t generate a response.</span>';
             messages.push({ role: 'assistant', content: botAnswer });
             const botRow = appendMessage('bot', botAnswer);
 
-            // Плавно прокрутить так, чтобы ответ оказался у верхней границы
             botRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-            // Обновить sessionId, если пришёл новый
             if (data.sessionId && data.sessionId !== currentSessionId) {
                 currentSessionId = data.sessionId;
                 localStorage.setItem('sessionId', currentSessionId);
@@ -224,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Включить автоизменение высоты textarea
     input.addEventListener('input', adjustTextareaHeight);
     window.addEventListener('load', adjustTextareaHeight);
     window.addEventListener('resize', adjustTextareaHeight);

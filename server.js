@@ -21,7 +21,6 @@ const port = process.env.PORT || 3000;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Словарь ISO → читаемое имя
 const isoToName = {
   rus: 'Russian',
   eng: 'English',
@@ -31,10 +30,8 @@ const isoToName = {
   ita: 'Italian',
   por: 'Portuguese',
   heb: 'Hebrew',
-  // … добавьте по необходимости
 };
 
-// Функция детекции языка через GPT
 async function detectUserLang(text) {
   const resp = await openai.chat.completions.create({
     model: 'gpt-3.5-turbo',
@@ -53,7 +50,6 @@ async function detectUserLang(text) {
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
-// Загрузка системного промпта
 async function getSystemPrompt() {
   try {
     const p = path.join(__dirname, 'system_prompt.txt');
@@ -115,27 +111,27 @@ app.post('/upload', async (req, res) => {
 });
 
 app.post('/chat', async (req, res) => {
+  // Лог входящего запроса для дебага
+  console.log('➡️  Incoming /chat request from:', req.ip, 'body:', {
+    question: req.body.question,
+    sessionId: req.body.sessionId
+  });
+
   const { question, sessionId = uuidv4(), userId = 'defaultUser', messages: clientMsgs } = req.body;
   if (!question) return res.status(400).json({ answer: 'Please provide a question.' });
 
   const t0 = process.hrtime.bigint();
 
   try {
-    // 1) Детекция языка через GPT
     let userLang;
     try {
       userLang = await detectUserLang(question);
-      if (!isoToName[userLang]) {
-        console.warn(`GPT detection returned unexpected code "${userLang}", defaulting to English.`);
-        userLang = 'eng';
-      }
-    } catch (e) {
-      console.error('Language detection GPT error:', e);
+      if (!isoToName[userLang]) userLang = 'eng';
+    } catch {
       userLang = 'eng';
     }
     console.log(`DEBUG: Detected userLang via GPT: ${userLang}`);
 
-    // 2) Перевод вопроса в English (если нужно)
     let qEng = question;
     if (userLang !== 'eng') {
       const tres = await openai.chat.completions.create({
@@ -150,7 +146,6 @@ app.post('/chat', async (req, res) => {
       console.log(`DEBUG: Translated question: "${qEng}"`);
     }
 
-    // 3) Извлекаем историю из Supabase
     const { data: histDb, error: histErr } = await supabase
       .from('chat_history')
       .select('role, content')
@@ -160,10 +155,8 @@ app.post('/chat', async (req, res) => {
     const history = (histDb && histDb.length) ? histDb : (clientMsgs || []);
     const histForRewrite = [...history, { role: 'user', content: qEng }];
 
-    // 4) Переписываем вопрос при необходимости
     const qRewrite = await rewriteQuestion(qEng, histForRewrite);
 
-    // 5) Создаём эмбеддинг и ищем в базе
     const embRes = await openai.embeddings.create({ model: 'text-embedding-ada-002', input: qRewrite });
     const queryVec = embRes.data[0].embedding;
     const { data: chunks, error: matchErr } = await supabase.rpc('match_documents', {
@@ -174,12 +167,10 @@ app.post('/chat', async (req, res) => {
     if (matchErr) throw matchErr;
     chunks.forEach(c => console.log(`DEBUG: Retrieved from ${c.filename}`));
 
-    // 6) Отбираем до пяти чанков для контекста
     let textChunks = chunks.slice(0, 5).map(c => c.content);
     const hasContext = Boolean(textChunks.length);
     const contextText = hasContext ? textChunks.join('\n\n') : '';
 
-    // 7) Формируем системный промпт
     const systemPrompt = await getSystemPrompt();
     const sysWithCtx = hasContext
       ? `${systemPrompt}\n\nRelevant information from documents:\n${contextText}`
@@ -190,14 +181,12 @@ app.post('/chat', async (req, res) => {
       { role: 'user', content: qEng },
     ];
 
-    // 8) Запрашиваем ответ из GPT-4o
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: messagesForGPT,
     });
     let answerEng = completion.choices[0].message.content.trim();
 
-    // 9) Перевод ответа обратно (если нужно)
     let finalAnswer = answerEng;
     if (userLang !== 'eng') {
       const trb = await openai.chat.completions.create({
@@ -212,7 +201,6 @@ app.post('/chat', async (req, res) => {
       console.log(`DEBUG: Translated answer back to ${userLang}`);
     }
 
-    // 10) Сохраняем историю и возвращаем ответ
     await supabase.from('chat_history').insert([
       { session_id: sessionId, user_id: userId, role: 'user', content: question, timestamp: new Date().toISOString() },
       { session_id: sessionId, user_id: userId, role: 'assistant', content: finalAnswer, timestamp: new Date().toISOString() }
