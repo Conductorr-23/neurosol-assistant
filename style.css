@@ -67,6 +67,72 @@ body {
   text-align: center;
   margin-bottom: 24px;
 }
+/* ======================= */
+/*     СТИЛИ ONBOARDING     */
+/* ======================= */
+
+/* Контейнер для блока onboarding */
+.onboarding, #onboarding-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px; /* Отступ снизу, чтобы чат под блоком не прилипал */
+}
+
+/* Вступительный текст */
+.onboarding-intro,
+.onboarding-custom {
+  font-size: 18px;
+  margin: 12px auto;
+  color: #333;
+  text-align: center;
+}
+
+/* Контейнер для вопросов-кнопок */
+.onboarding-questions {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: space-evenly;
+}
+
+/* Сам вопрос в виде кнопки */
+.onboarding-question {
+  background-color: var(--user);
+    color: #333;
+    border: none;
+    padding: 10px 16px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: opacity 0.2s ease-in-out;
+    flex: calc(100% / 3 - 20px);
+}
+
+.onboarding-question:hover {
+  opacity: 0.9;
+}
+
+/* Медиазапросы для мобильных, если нужно */
+@media (max-width: 600px) {
+  .onboarding-intro,
+  .onboarding-custom {
+    font-size: 16px;
+  }
+  .onboarding-question {
+    font-size: 15px;
+    padding: 8px 14px;
+  }
+}
+
+/* ======================= */
+/*  Конец стилей Onboarding */
+/* ======================= */
 
 .chat {
   flex: 1;
