@@ -192,15 +192,15 @@ html, body {
   border-radius: 8px;
   font-size: 16px;
   resize: none;
-  min-height: 48px;
-  /* 🔥 ИЗМЕНЕНИЕ: Уточняем max-height, используем точное значение line-height */
+  /* 🔥 ИЗМЕНЕНИЕ: min-height для 3 строк */
+  min-height: calc((16px * 1.6 * 3) + (12px * 2)); /* 3 строки * font-size * line-height + 2 * padding-top/bottom */
+  /* 🔥 ИЗМЕНЕНИЕ: max-height для 5 строк */
   max-height: calc((16px * 1.6 * 5) + (12px * 2)); /* 5 строк * font-size * line-height + 2 * padding-top/bottom */
-  line-height: 1.6; /* 🔥 Теперь точно соответствует line-height bubble */
+  line-height: 1.6;
   font-family: var(--font-main);
   
-  /* 🔥 ДОБАВЛЕНО/ИЗМЕНЕНО: Убедимся, что display: block и управляем overflow-y из JS */
-  display: block; /* Убедимся, что textarea ведет себя как блочный элемент */
-  width: 100%; /* Убедимся, что textarea занимает всю доступную ширину */
+  display: block;
+  width: 100%;
   overflow-y: hidden; /* Изначально скрываем скролл, JS будет управлять */
 }
 
@@ -270,12 +270,12 @@ html, body {
     }
     .chat-footer input,
     .chat-footer textarea {
-        font-size: 15px; /* Уточняем размер шрифта для мобильных */
-        min-height: 45px; /* Адаптируем min-height под мобильный font-size */
-        max-height: calc((15px * 1.5 * 5) + (10px * 2)); /* Пересчитываем max-height для мобильных */
-        line-height: 1.5; /* Убедимся, что line-height соответствует font-size на мобильных */
-        /* padding: 10px 15px; <-- Убрано ранее, это правильно */
-        /* min-height: initial; <-- Закомментировано, так как конфликтует с min-height в общем правиле */
+        font-size: 15px;
+        line-height: 1.5; /* Для мобильных line-height 1.5 */
+        /* 🔥 ИЗМЕНЕНИЕ: min-height для 3 строк на мобильных */
+        min-height: calc((15px * 1.5 * 3) + (10px * 2)); /* 3 строки * font-size * line-height + 2 * padding-top/bottom */
+        /* 🔥 ИЗМЕНЕНИЕ: max-height для 5 строк на мобильных */
+        max-height: calc((15px * 1.5 * 5) + (10px * 2)); /* 5 строк * font-size * line-height + 2 * padding-top/bottom */
     }
 }
 .error {
@@ -288,7 +288,7 @@ html, body {
 /* ======================= */
 
 /* Контейнер для блока onboarding */
-.onboarding {
+#onboarding-section {
   display: flex;
   flex-direction: column;
   align-items: center;
