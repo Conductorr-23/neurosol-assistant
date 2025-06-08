@@ -9,7 +9,7 @@
   --font-head: 'Poppins', sans-serif !important;
 }
 
-/* 🔥 Общие правила для box-sizing */
+/* 🔥 ДОБАВЛЕНО/ИЗМЕНЕНО: Общие правила для box-sizing для всех элементов */
 html {
   box-sizing: border-box;
 }
@@ -17,30 +17,30 @@ html {
   box-sizing: inherit;
 }
 
-/* 1) Сбрасываем любые внешние отступы и делаем body на всю высоту */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-}
-
-/* 2) Центрируем чат-контейнер по горизонтали и вертикали */
 body {
   font-family: var(--font-main);
   background: var(--bg);
+  margin: 0;
+  padding: 40px 20px;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow-x: hidden;
+  min-height: 100vh;
+  overflow-x: hidden; /* 🔥 Запрещаем горизонтальный скролл для body */  
+}
+html, body {
+  height: 100%;
+  margin: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--bg);
 }
 
-/* 3) Контейнер чата с «эластичными» отступами 10px */
 .chat-wrapper {
-  box-sizing: border-box;
-  width: calc(100% - 20px);    /* 100% ширины экрана минус 2×10px */
+  width: 100%;
   max-width: 720px;
-  height: calc(100vh - 20px);  /* 100% высоты окна минус 2×10px */
-  margin: 10px;                /* отступ 10px со всех сторон */
+  /*height: 100%; /* Занимает 100% доступной высоты родителя (body) */
+  max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px /* или ваш внешний padding body */);
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -48,19 +48,18 @@ body {
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
+  overflow: hidden; /* Обрезаем содержимое, которое выходит за границы */
 }
 
-/* Логотип */
 .chat-logo {
   text-align: center;
   margin-bottom: 12px;
 }
+
 .chat-logo img {
   height: 48px;
 }
 
-/* Заголовок */
 .chat-header {
   font-family: var(--font-head);
   font-size: 24px;
@@ -72,38 +71,40 @@ body {
   margin-bottom: 24px;
 }
 
-/* Область сообщений */
 .chat {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto; /* Скролл для сообщений */
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 20px;
 }
+
+/* Стили для скроллбара (только для Webkit браузеров) */
 .chat::-webkit-scrollbar {
   width: 8px;
 }
+
 .chat::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 10px;
 }
+
 .chat::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 10px;
 }
 
-/* Строки сообщений */
 .chat-row {
   display: flex;
   align-items: flex-start;
   gap: 10px;
 }
+
 .chat-row.user {
   justify-content: flex-end;
 }
 
-/* Иконки */
 .chat-icon {
   flex-shrink: 0;
   width: 32px;
@@ -112,50 +113,60 @@ body {
   align-items: center;
   justify-content: center;
 }
+
 .chat-icon img {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-/* Пузырьки */
 .chat-bubble {
   padding: 12px 16px;
   border-radius: 12px;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.6; /* Увеличил line-height для лучшего соответствия высоте текста */
   white-space: normal;
   word-wrap: break-word;
   /*max-width: 75%;*/
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
+
 .chat-bubble.user {
   background-color: var(--user);
 }
+
 .chat-bubble.bot {
   background-color: var(--bot);
 }
+
+/* Стили для Markdown-разметки внутри пузыря */
 .chat-bubble p {
   margin: 0 0 10px;
 }
+
 .chat-bubble p:last-child {
   margin-bottom: 0;
 }
+
 .chat-bubble ul,
 .chat-bubble ol {
   margin: 10px 0 10px 20px;
   padding-left: 20px;
 }
+
 .chat-bubble li {
   margin-bottom: 6px;
 }
+
 .chat-bubble li:last-child {
   margin-bottom: 0;
 }
+
 .chat-bubble a {
   color: var(--link);
   text-decoration: underline;
 }
+
 .chat-bubble strong {
   font-weight: bold;
 }
@@ -166,20 +177,27 @@ body {
   gap: 12px;
   align-items: flex-end;
 }
+
+.chat-footer input,
 .chat-footer textarea {
   flex: 1;
   padding: 12px 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 16px;
-  line-height: 1.6;
   resize: none;
   min-height: 48px;
-  max-height: calc((16px * 1.6 * 5) + 24px);
+  /* 🔥 ИЗМЕНЕНИЕ: Уточняем max-height, используем точное значение line-height */
+  max-height: calc((16px * 1.6 * 5) + (12px * 2)); /* 5 строк * font-size * line-height + 2 * padding-top/bottom */
+  line-height: 1.6; /* 🔥 Теперь точно соответствует line-height bubble */
   font-family: var(--font-main);
-  width: 100%;
-  overflow-y: auto;
+  
+  /* 🔥 ДОБАВЛЕНО/ИЗМЕНЕНО: Убедимся, что display: block и управляем overflow-y из JS */
+  display: block; /* Убедимся, что textarea ведет себя как блочный элемент */
+  width: 100%; /* Убедимся, что textarea занимает всю доступную ширину */
+  overflow-y: hidden; /* Изначально скрываем скролл, JS будет управлять */
 }
+
 .chat-footer button {
   background: linear-gradient(to right, var(--accent), var(--link));
   border: none;
@@ -192,94 +210,146 @@ body {
   transition: opacity 0.3s ease;
   flex-shrink: 0;
 }
+
 .chat-footer button:hover {
   opacity: 0.9;
 }
 
-/* Спиннер */
+/* Спиннер для загрузки */
 .spinner {
   display: inline-block;
   animation: spin 1.2s linear infinite;
   vertical-align: middle;
 }
+
 @keyframes spin {
   from { transform: rotateY(0deg); }
-  to   { transform: rotateY(360deg); }
+  to { transform: rotateY(360deg); }
 }
 
-/* Ошибка */
 .error {
   color: #d32f2f;
   font-weight: 600;
 }
 
-/* Онбординг */
-.onboarding-questions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: space-evenly;
-  margin-bottom: 12px;
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 600px) {
+    body {
+        padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
+    }
+    .chat-wrapper {
+        padding: 10px;
+    }
+    .chat-header {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    .chat-bubble {
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .chat-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    .chat-footer button {
+        width: 100%;
+        padding: 10px 15px;
+    }
+    .chat-footer input,
+    .chat-footer textarea {
+        font-size: 15px; /* Уточняем размер шрифта для мобильных */
+        min-height: 45px; /* Адаптируем min-height под мобильный font-size */
+        max-height: calc((15px * 1.5 * 5) + (10px * 2)); /* Пересчитываем max-height для мобильных */
+        line-height: 1.5; /* Убедимся, что line-height соответствует font-size на мобильных */
+        /* padding: 10px 15px; <-- Убрано ранее, это правильно */
+        /* min-height: initial; <-- Закомментировано, так как конфликтует с min-height в общем правиле */
+    }
 }
-.onboarding-question {
-  background-color: var(--user);
-  color: #333;
-  border: none;
-  padding: 10px 16px;
-  font-size: 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  flex: calc(100%/3 - 20px);
-  text-align: left;
-  transition: opacity 0.2s ease-in-out;
-}
-.onboarding-intro {
-  font-size: 16px;
-  margin-bottom: 12px;
-  text-align: center;
-  color: #333;
-}
-.onboarding-custom {
-  font-size: 14px;
-  text-align: center;
-  color: #555;
-  margin-bottom: 20px;
+.error {
+  color: #d32f2f;
+  font-weight: 600;
 }
 
-/* Дисклеймер */
+/* ======================= */
+/*     СТИЛИ ONBOARDING     */
+/* ======================= */
+
+/* Контейнер для блока onboarding */
+.onboarding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px; /* Отступ снизу, чтобы чат под блоком не прилипал */
+}
+
+/* Вступительный текст */
+.onboarding-intro,
+.onboarding-custom {
+  font-size: 18px;
+  margin: 12px auto;
+  color: #333;
+  text-align: center;
+}
+
+/* Контейнер для вопросов-кнопок */
+.onboarding-questions {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: space-evenly;
+}
+
+/* Сам вопрос в виде кнопки */
+.onboarding-question {
+  background-color: var(--user);
+    color: #333;
+    border: none;
+    padding: 10px 16px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: opacity 0.2s ease-in-out;
+    flex: calc(100% / 3 - 20px);
+}
+
+.onboarding-question:hover {
+  opacity: 0.9;
+}
+
+/* Медиазапросы для мобильных, если нужно */
+@media (max-width: 600px) {
+  .onboarding-intro,
+  .onboarding-custom {
+    font-size: 16px;
+  }
+  .onboarding-question {
+    font-size: 15px;
+    padding: 8px 14px;
+  }
+}
+
+/* ======================= */
+/*  Конец стилей Onboarding */
+/* ======================= */
+/* ======================= */
+/*      ДИСКЛЕЙМЕРЫ        */
+/* ======================= */
 .disclaimers {
+  margin-top: 8px;
+  padding: 0 12px;
   text-align: center;
   font-size: 12px;
   line-height: 1.4;
   color: #666;
-  margin-top: auto;
-}
-.disclaimers p {
-  margin: 4px 0;
 }
 
-/* Мобильная адаптация */
-@media (max-width: 600px) {
-  .chat-header {
-    font-size: 20px;
-    margin-bottom: 15px;
-  }
-  .chat-bubble {
-    font-size: 15px;
-    line-height: 1.5;
-  }
-  .chat-footer {
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
-  }
-  .chat-footer textarea {
-    font-size: 15px;
-    min-height: 45px;
-    max-height: calc((15px * 1.5 * 5) + 20px);
-  }
-  .chat-footer button {
-    width: 100%;
-    padding: 10px 15px;
-  }
+.disclaimers p {
+  margin: 4px 0;
 }
