@@ -32,9 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4) Функция сохранения истории (без сообщений-ошибок)
     function saveHistory() {
         if (!currentSessionId) return;
-        const toSave = messages.filter(m => {
-            return !(m.role === 'assistant' && m.content.includes('class="error"'));
-        });
+        const toSave = messages.filter(m =>
+            !(m.role === 'assistant' && m.content.includes('class="error"'))
+        );
         sessionStorage.setItem(`chat_${currentSessionId}`, JSON.stringify(toSave));
     }
 
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 messages.push(...hist);
                 onboardingSection.style.display = 'none';
             } catch (e) {
-                console.warn('Не удалось восстановить истории:', e);
+                console.warn('Не удалось восстановить историю:', e);
             }
         }
     } else {
@@ -56,11 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
         showOnboarding();
     }
 
-    // 6) Скрываем онбординг при вводе вручную
+    // 6) При вводе вручную скрываем онбординг и растягиваем textarea
     input.addEventListener('input', () => {
         if (onboardingSection.style.display !== 'none') {
             onboardingSection.style.display = 'none';
         }
+        adjustTextareaHeight();
     });
 
     // 7) Функция отображения онбординга
@@ -114,14 +115,17 @@ document.addEventListener('DOMContentLoaded', () => {
             icon.innerHTML = role === 'user'
                 ? '<img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" width="32" height="32" alt="User"/>'
                 : '<img src="bot-icon.svg" width="32" height="32" alt="Bot"/>';
+        } else {
+            icon.innerHTML = '<img src="bot-icon.svg" class="spinner" width="32" height="32" alt="Loading...">';
         }
 
         const bubble = document.createElement('div');
         bubble.className = `chat-bubble ${role}`;
 
         if (role === 'bot' && !isLoading) {
-            // Восстанавливаем HTML-разметку прямо из content
             bubble.innerHTML = content;
+        } else if (isLoading) {
+            bubble.textContent = '';
         } else {
             bubble.textContent = content;
         }
@@ -137,63 +141,51 @@ document.addEventListener('DOMContentLoaded', () => {
         return row;
     }
 
-    function appendMessage(role, content) {
-        const row = createMessageRow(role, content);
+    function appendMessage(role, content, isLoading = false) {
+        const row = createMessageRow(role, content, isLoading);
         chat.appendChild(row);
+        chat.scrollTop = chat.scrollHeight;
         return row;
     }
 
     // 9) Авто-рост textarea до 5 строк, скролл внутри при переполнении
     function adjustTextareaHeight() {
-        input.style.height = '0px';
         input.style.height = 'auto';
         requestAnimationFrame(() => {
-            let h = input.scrollHeight;
+            let newH = input.scrollHeight;
             const st = getComputedStyle(input);
-            const maxH = parseFloat(st.maxHeight);
             const minH = parseFloat(st.minHeight);
-            h = Math.max(minH, Math.min(maxH, h));
-            input.style.height = h + 'px';
-            input.style.overflowY = input.scrollHeight > h ? 'auto' : 'hidden';
+            const maxH = parseFloat(st.maxHeight);
+            newH = Math.max(minH, Math.min(maxH, newH));
+            input.style.height = newH + 'px';
+            input.style.overflowY = input.scrollHeight > newH ? 'auto' : 'hidden';
         });
     }
 
     // 10) Отправка формы с анимацией смены фраз
-    form.addEventListener('submit', async e => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const question = input.value.trim();
         if (!question) return;
 
-        // Скрыть онбординг
         onboardingSection.style.display = 'none';
 
-        // Инициализировать sessionId, если ещё нет
         if (!currentSessionId) {
             currentSessionId = crypto.randomUUID();
             sessionStorage.setItem('sessionId', currentSessionId);
         }
 
-        // Запрос
-        const requestBody = { question, messages, userId, sessionId: currentSessionId };
-
-        // Добавить пользовательское сообщение
         messages.push({ role: 'user', content: question });
         saveHistory();
         appendMessage('user', question);
 
-        // Сброс input
         input.value = '';
         adjustTextareaHeight();
 
-        // Индикатор загрузки
         const statuses = ['Searching for information', 'Checking documents', 'Preparing response'];
         let idx = 0;
-        const loadingRow = createMessageRow('bot', statuses[idx], true);
-        loadingRow.querySelector('.chat-icon').innerHTML =
-            '<img src="bot-icon.svg" class="spinner" width="32" height="32" alt="Loading...">';
+        const loadingRow = appendMessage('bot', statuses[idx], true);
         const loadingBubble = loadingRow.querySelector('.chat-bubble.bot');
-        chat.appendChild(loadingRow);
-        chat.scrollTop = chat.scrollHeight;
         const timer = setInterval(() => {
             idx = (idx + 1) % statuses.length;
             loadingBubble.textContent = statuses[idx];
@@ -203,43 +195,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`${API_BASE}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody),
+                body: JSON.stringify({ question, messages, userId, sessionId: currentSessionId }),
             });
+
             if (!res.ok) {
-                let err;
-                try { err = await res.json(); } catch { err = { answer: `Server error ${res.status}` }; }
-                throw new Error(err.answer || `Error ${res.status}`);
+                let errData;
+                try {
+                    errData = await res.json();
+                } catch {
+                    errData = { answer: `Server error: ${res.status}` };
+                }
+                throw new Error(errData.answer || `Error ${res.status}`);
             }
+
             const data = await res.json();
 
-            // Убираем загрузчик
             clearInterval(timer);
-            if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
+            chat.removeChild(loadingRow);
 
-            // Добавляем ответ
-            const answer = data.answer || '<span class="error">Sorry, no response.</span>';
-            messages.push({ role: 'assistant', content: answer });
-            saveHistory();
-            const botRow = appendMessage('bot', answer);
-            botRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            // Обновляем sessionId из сервера, если изменился
             if (data.sessionId && data.sessionId !== currentSessionId) {
                 currentSessionId = data.sessionId;
                 sessionStorage.setItem('sessionId', currentSessionId);
             }
+
+            const answer = data.answer || '<span class="error">Sorry, no response.</span>';
+            messages.push({ role: 'assistant', content: answer });
+            saveHistory();
+            appendMessage('bot', answer);
         } catch (err) {
             console.error('Fetch error:', err);
             clearInterval(timer);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
-            const msg = `<span class="error">${err.message}</span>`;
-            appendMessage('bot', msg).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            appendMessage('bot', `<span class="error">${err.message}</span>`);
         } finally {
             adjustTextareaHeight();
         }
     });
 
-    // Подписка на изменение размера и ввод
     input.addEventListener('input', adjustTextareaHeight);
     window.addEventListener('load', adjustTextareaHeight);
     window.addEventListener('resize', adjustTextareaHeight);

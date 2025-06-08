@@ -7,9 +7,14 @@
   --accent: #26c6da;
   --font-main: 'Inter', sans-serif !important;
   --font-head: 'Poppins', sans-serif !important;
+
+  /* настройки textarea */
+  --textarea-font-size: 16px;
+  --textarea-line-height: 1.6;
+  --textarea-vertical-padding: calc(12px + 12px); /* padding-top + padding-bottom */
+  --textarea-max-lines: 5;
 }
 
-/* 🔥 ДОБАВЛЕНО/ИЗМЕНЕНО: Общие правила для box-sizing для всех элементов */
 html {
   box-sizing: border-box;
 }
@@ -28,19 +33,11 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
-html, body {
-  height: 100%;
-  margin: 0;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  background: var(--bg);
-  overflow-x: hidden;
-}
 
 .chat-wrapper {
   width: 100%;
   max-width: 720px;
-  max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px);
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -48,8 +45,7 @@ html, body {
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  overflow-x: hidden;
-  overflow-y: scroll;
+  overflow: hidden;
 }
 
 .chat-logo {
@@ -75,14 +71,12 @@ html, body {
 .chat {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* Стили для скроллбара (только для Webkit браузеров) */
 .chat::-webkit-scrollbar {
   width: 8px;
 }
@@ -100,7 +94,6 @@ html, body {
   align-items: flex-start;
   gap: 10px;
 }
-
 .chat-row.user {
   justify-content: flex-end;
 }
@@ -113,7 +106,6 @@ html, body {
   align-items: center;
   justify-content: center;
 }
-
 .chat-icon img {
   width: 100%;
   height: 100%;
@@ -127,27 +119,22 @@ html, body {
   line-height: 1.6;
   white-space: normal;
   word-wrap: break-word;
-  max-width: calc(100% - 10px);
+  max-width: 75%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
-
 .chat-bubble.user {
   background-color: var(--user);
 }
-
 .chat-bubble.bot {
   background-color: var(--bot);
 }
-
-/* Стили для Markdown-разметки внутри пузыря */
 .chat-bubble p {
   margin: 0 0 10px;
 }
 .chat-bubble p:last-child {
   margin-bottom: 0;
 }
-.chat-bubble ul,
-.chat-bubble ol {
+.chat-bubble ul, .chat-bubble ol {
   margin: 10px 0 10px 20px;
   padding-left: 20px;
 }
@@ -165,29 +152,33 @@ html, body {
   font-weight: bold;
 }
 
-/* Футер чата */
 .chat-footer {
   display: flex;
   gap: 12px;
   align-items: flex-end;
 }
 
-.chat-footer input,
 .chat-footer textarea {
   flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+  font-size: var(--textarea-font-size);
+  line-height: var(--textarea-line-height);
   padding: 12px 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-size: 16px;
   resize: none;
-  min-height: 48px;
-  max-height: calc((16px * 1.6 * 5) + (12px * 2)); /* ограничение до 5 строк */
-  line-height: 1.6;
-  font-family: var(--font-main);
-  display: block;
-  width: 100%;
-  /* 🔄 ИЗМЕНЕНО: при переполнении текста показываем скролл внутри textarea */
-  overflow-y: auto;
+  overflow-y: hidden;
+  height: auto;
+  min-height: calc(
+    var(--textarea-font-size) * var(--textarea-line-height)
+    + var(--textarea-vertical-padding)
+  );
+  max-height: calc(
+    var(--textarea-font-size) * var(--textarea-line-height)
+    * var(--textarea-max-lines)
+    + var(--textarea-vertical-padding)
+  );
 }
 
 .chat-footer button {
@@ -202,18 +193,15 @@ html, body {
   transition: opacity 0.3s ease;
   flex-shrink: 0;
 }
-
 .chat-footer button:hover {
   opacity: 0.9;
 }
 
-/* Спиннер для загрузки */
 .spinner {
   display: inline-block;
   animation: spin 1.2s linear infinite;
   vertical-align: middle;
 }
-
 @keyframes spin {
   from { transform: rotateY(0deg); }
   to { transform: rotateY(360deg); }
@@ -224,22 +212,30 @@ html, body {
   font-weight: 600;
 }
 
-/* Медиа-запросы для мобильных устройств */
+.disclaimers {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* мобильные */
 @media (max-width: 600px) {
+  :root {
+    --textarea-font-size: 15px;
+    --textarea-line-height: 1.5;
+    --textarea-vertical-padding: calc(10px + 10px);
+  }
   body {
-    padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
-    overflow-x: hidden;
+    padding: 15px;
   }
   .chat-wrapper {
-    padding: 10px;
-    overflow-x: hidden;
+    padding: 15px;
   }
   .chat-header {
     font-size: 20px;
     margin-bottom: 15px;
-  }
-  .chat {
-    overflow-x: hidden;
   }
   .chat-bubble {
     font-size: 15px;
@@ -254,86 +250,4 @@ html, body {
     width: 100%;
     padding: 10px 15px;
   }
-  .chat-footer input,
-  .chat-footer textarea {
-    font-size: 15px;
-    min-height: 45px;
-    max-height: calc((15px * 1.5 * 5) + (10px * 2));
-    line-height: 1.5;
-    overflow-y: auto;
-  }
-}
-
-/* ======================= */
-/*     СТИЛИ ONBOARDING     */
-/* ======================= */
-
-.onboarding {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.onboarding-intro,
-.onboarding-custom {
-  font-size: 18px;
-  margin: 12px auto;
-  color: #333;
-  text-align: center;
-}
-
-.onboarding-questions {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  width: 100%;
-  flex-wrap: wrap;
-  align-items: stretch;
-  justify-content: space-evenly;
-}
-
-.onboarding-question {
-  background-color: var(--user);
-  color: #333;
-  border: none;
-  padding: 10px 16px;
-  font-size: 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  transition: opacity 0.2s ease-in-out;
-  flex: calc(100% / 3 - 20px);
-}
-
-.onboarding-question:hover {
-  opacity: 0.9;
-}
-
-@media (max-width: 600px) {
-  .onboarding-intro,
-  .onboarding-custom {
-    font-size: 16px;
-  }
-  .onboarding-question {
-    font-size: 15px;
-    padding: 8px 14px;
-  }
-}
-
-/* ======================= */
-/*      ДИСКЛЕЙМЕРЫ        */
-/* ======================= */
-.disclaimers {
-  margin-top: 8px;
-  padding: 0 12px;
-  text-align: center;
-  font-size: 12px;
-  line-height: 1.4;
-  color: #666;
-}
-
-.disclaimers p {
-  margin: 4px 0;
 }
