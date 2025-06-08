@@ -180,8 +180,11 @@ html, body {
 /* Футер чата */
 .chat-footer {
   display: flex;
-  gap: 12px;
-  align-items: flex-end;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    flex-shrink: 0;
+    gap: 12px;
 }
 
 .chat-footer input,
@@ -260,9 +263,12 @@ html, body {
         line-height: 1.5;
     }
     .chat-footer {
-        flex-direction: column;
-        gap: 10px;
-        align-items: stretch;
+        display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    flex-shrink: 0;
+    gap: 12px;
     }
     .chat-footer button {
         width: 100%;
