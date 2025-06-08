@@ -7,14 +7,9 @@
   --accent: #26c6da;
   --font-main: 'Inter', sans-serif !important;
   --font-head: 'Poppins', sans-serif !important;
-
-  /* настройки textarea */
-  --textarea-font-size: 16px;
-  --textarea-line-height: 1.6;
-  --textarea-vertical-padding: calc(12px + 12px); /* padding-top + padding-bottom */
-  --textarea-max-lines: 5;
 }
 
+/* 🔥 ДОБАВЛЕНО/ИЗМЕНЕНО: Общие правила для box-sizing для всех элементов */
 html {
   box-sizing: border-box;
 }
@@ -31,13 +26,22 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: hidden; /* 🔥 Запрещаем горизонтальный скролл для body */  
+}
+html, body {
+  height: 100%;
+  margin: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--bg);
+    overflow-x: hidden;
 }
 
 .chat-wrapper {
   width: 100%;
   max-width: 720px;
-  max-height: 90vh;
+  /*height: 100%; /* Занимает 100% доступной высоты родителя (body) */
+  max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px /* или ваш внешний padding body */);
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -45,7 +49,8 @@ body {
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
+  overflow-x: hidden; /* Обрезаем содержимое, которое выходит за границы */
+  overflow-y: scroll;
 }
 
 .chat-logo {
@@ -67,12 +72,223 @@ body {
   text-align: center;
   margin-bottom: 24px;
 }
+
+.chat {
+  flex: 1;
+  overflow-y: auto; /* Скролл для сообщений */
+  overflow-x: hidden;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chat:has(.chat-row.bot) {
+    min-height: calc(100vh / 3 * 2 - 60px);
+}
+
+/* Стили для скроллбара (только для Webkit браузеров) */
+.chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.chat::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+.chat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.chat-row.user {
+  justify-content: flex-end;
+}
+
+.chat-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.chat-bubble {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  line-height: 1.6; /* Увеличил line-height для лучшего соответствия высоте текста */
+  white-space: normal;
+  word-wrap: break-word;
+  max-width: calc(100% - 10px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.chat-bubble.user {
+  background-color: var(--user);
+}
+
+.chat-bubble.bot {
+  background-color: var(--bot);
+}
+
+/* Стили для Markdown-разметки внутри пузыря */
+.chat-bubble p {
+  margin: 0 0 10px;
+}
+
+.chat-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-bubble ul,
+.chat-bubble ol {
+  margin: 10px 0 10px 20px;
+  padding-left: 20px;
+}
+
+.chat-bubble li {
+  margin-bottom: 6px;
+}
+
+.chat-bubble li:last-child {
+  margin-bottom: 0;
+}
+
+.chat-bubble a {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.chat-bubble strong {
+  font-weight: bold;
+}
+
+/* Футер чата */
+.chat-footer {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.chat-footer input,
+.chat-footer textarea {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 16px;
+  resize: none;
+  min-height: 48px;
+  /* 🔥 ИЗМЕНЕНИЕ: Уточняем max-height, используем точное значение line-height */
+  max-height: calc((16px * 1.6 * 5) + (12px * 2)); /* 5 строк * font-size * line-height + 2 * padding-top/bottom */
+  line-height: 1.6; /* 🔥 Теперь точно соответствует line-height bubble */
+  font-family: var(--font-main);
+  
+  /* 🔥 ДОБАВЛЕНО/ИЗМЕНЕНО: Убедимся, что display: block и управляем overflow-y из JS */
+  display: block; /* Убедимся, что textarea ведет себя как блочный элемент */
+  width: 100%; /* Убедимся, что textarea занимает всю доступную ширину */
+  overflow-y: hidden; /* Изначально скрываем скролл, JS будет управлять */
+}
+
+.chat-footer button {
+  background: linear-gradient(to right, var(--accent), var(--link));
+  border: none;
+  padding: 12px 20px;
+  color: #fff;
+  font-weight: 600;
+  font-family: var(--font-head);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  flex-shrink: 0;
+}
+
+.chat-footer button:hover {
+  opacity: 0.9;
+}
+
+/* Спиннер для загрузки */
+.spinner {
+  display: inline-block;
+  animation: spin 1.2s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+
+.error {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 600px) {
+    body {
+        padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
+        overflow-x: hidden;
+    }
+    .chat-wrapper {
+        padding: 10px;
+        overflow-x: hidden;
+    }
+    .chat-header {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    .chat {
+      overflow-x: hidden;
+    }
+    .chat-bubble {
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .chat-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    .chat-footer button {
+        width: 100%;
+        padding: 10px 15px;
+    }
+    .chat-footer input,
+    .chat-footer textarea {
+        font-size: 15px; /* Уточняем размер шрифта для мобильных */
+        min-height: 45px; /* Адаптируем min-height под мобильный font-size */
+        max-height: calc((15px * 1.5 * 5) + (10px * 2)); /* Пересчитываем max-height для мобильных */
+        line-height: 1.5; /* Убедимся, что line-height соответствует font-size на мобильных */
+        /* padding: 10px 15px; <-- Убрано ранее, это правильно */
+        /* min-height: initial; <-- Закомментировано, так как конфликтует с min-height в общем правиле */
+    }
+}
+.error {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
 /* ======================= */
 /*     СТИЛИ ONBOARDING     */
 /* ======================= */
 
 /* Контейнер для блока onboarding */
-.onboarding, #onboarding-section {
+.onboarding {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -133,187 +349,18 @@ body {
 /* ======================= */
 /*  Конец стилей Onboarding */
 /* ======================= */
-
-.chat {
-  flex: 1;
-  overflow-y: auto;
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.chat::-webkit-scrollbar {
-  width: 8px;
-}
-.chat::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 10px;
-}
-.chat::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 10px;
-}
-
-.chat-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-.chat-row.user {
-  justify-content: flex-end;
-}
-
-.chat-icon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.chat-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.chat-bubble {
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 16px;
-  line-height: 1.6;
-  white-space: normal;
-  word-wrap: break-word;
-  max-width: 75%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
-}
-.chat-bubble.user {
-  background-color: var(--user);
-}
-.chat-bubble.bot {
-  background-color: var(--bot);
-}
-.chat-bubble p {
-  margin: 0 0 10px;
-}
-.chat-bubble p:last-child {
-  margin-bottom: 0;
-}
-.chat-bubble ul, .chat-bubble ol {
-  margin: 10px 0 10px 20px;
-  padding-left: 20px;
-}
-.chat-bubble li {
-  margin-bottom: 6px;
-}
-.chat-bubble li:last-child {
-  margin-bottom: 0;
-}
-.chat-bubble a {
-  color: var(--link);
-  text-decoration: underline;
-}
-.chat-bubble strong {
-  font-weight: bold;
-}
-
-.chat-footer {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.chat-footer textarea {
-  flex: 1;
-  box-sizing: border-box;
-  width: 100%;
-  font-size: var(--textarea-font-size);
-  line-height: var(--textarea-line-height);
-  padding: 12px 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  resize: none;
-  overflow-y: hidden;
-  height: auto;
-  min-height: calc(
-    var(--textarea-font-size) * var(--textarea-line-height)
-    + var(--textarea-vertical-padding)
-  );
-  max-height: calc(
-    var(--textarea-font-size) * var(--textarea-line-height)
-    * var(--textarea-max-lines)
-    + var(--textarea-vertical-padding)
-  );
-}
-
-.chat-footer button {
-  background: linear-gradient(to right, var(--accent), var(--link));
-  border: none;
-  padding: 12px 20px;
-  color: #fff;
-  font-weight: 600;
-  font-family: var(--font-head);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: opacity 0.3s ease;
-  flex-shrink: 0;
-}
-.chat-footer button:hover {
-  opacity: 0.9;
-}
-
-.spinner {
-  display: inline-block;
-  animation: spin 1.2s linear infinite;
-  vertical-align: middle;
-}
-@keyframes spin {
-  from { transform: rotateY(0deg); }
-  to { transform: rotateY(360deg); }
-}
-
-.error {
-  color: #d32f2f;
-  font-weight: 600;
-}
-
+/* ======================= */
+/*      ДИСКЛЕЙМЕРЫ        */
+/* ======================= */
 .disclaimers {
-  margin-top: 12px;
-  font-size: 12px;
-  color: #666;
-  line-height: 1.4;
+  margin-top: 8px;
+  padding: 0 12px;
   text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #666;
 }
 
-/* мобильные */
-@media (max-width: 600px) {
-  :root {
-    --textarea-font-size: 15px;
-    --textarea-line-height: 1.5;
-    --textarea-vertical-padding: calc(10px + 10px);
-  }
-  body {
-    padding: 15px;
-  }
-  .chat-wrapper {
-    padding: 15px;
-  }
-  .chat-header {
-    font-size: 20px;
-    margin-bottom: 15px;
-  }
-  .chat-bubble {
-    font-size: 15px;
-    line-height: 1.5;
-  }
-  .chat-footer {
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
-  }
-  .chat-footer button {
-    width: 100%;
-    padding: 10px 15px;
-  }
+.disclaimers p {
+  margin: 4px 0;
 }
