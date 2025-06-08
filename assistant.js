@@ -1,90 +1,109 @@
 // assistant.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    // 1) Базовый URL для всех fetch
+    const API_BASE = window.location.origin;
+
     const form = document.getElementById('form');
     const input = document.getElementById('input');
     const chat = document.getElementById('chat');
     const onboardingSection = document.getElementById('onboarding-section');
 
-    // базовый URL для запросов
-    const API_BASE = window.location.origin;
-
-    // История сообщений
+    // История сообщений текущей сессии
     const messages = [];
 
-    // Генерация или загрузка userId
+    // 2) userId хранится в localStorage
     let userId = localStorage.getItem('userId');
     if (!userId) {
         userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         localStorage.setItem('userId', userId);
     }
 
-    // Загрузка и валидация sessionId
-    let currentSessionId = localStorage.getItem('sessionId');
-    function isUUID(uuid) {
-        const re = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-        return re.test(uuid);
+    // 3) sessionId хранится в sessionStorage (для разделения вкладок)
+    let currentSessionId = sessionStorage.getItem('sessionId');
+    function isUUID(u) {
+        return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(u);
     }
     if (currentSessionId && !isUUID(currentSessionId)) {
-        localStorage.removeItem('sessionId');
+        sessionStorage.removeItem('sessionId');
         currentSessionId = null;
     }
 
-    // Если новая сессия (sessionId нет) — показываем онбординг
-    if (!currentSessionId) {
+    // 4) Функция сохранения истории (без сообщений-ошибок)
+    function saveHistory() {
+        if (!currentSessionId) return;
+        const toSave = messages.filter(m => {
+            return !(m.role === 'assistant' && m.content.includes('class="error"'));
+        });
+        sessionStorage.setItem(`chat_${currentSessionId}`, JSON.stringify(toSave));
+    }
+
+    // 5) При загрузке: восстанавливаем историю, если есть sessionId
+    if (currentSessionId) {
+        const saved = sessionStorage.getItem(`chat_${currentSessionId}`);
+        if (saved) {
+            try {
+                const hist = JSON.parse(saved);
+                hist.forEach(m => appendMessage(m.role, m.content));
+                messages.push(...hist);
+                onboardingSection.style.display = 'none';
+            } catch (e) {
+                console.warn('Не удалось восстановить историю:', e);
+            }
+        }
+    } else {
+        // новая вкладка => онбординг
         showOnboarding();
     }
 
-    // Скрываем онбординг при вводе вручную
+    // 6) При вводе вручную скрываем онбординг
     input.addEventListener('input', () => {
-        localStorage.setItem('lastSessionTime', Date.now());
         if (onboardingSection.style.display !== 'none') {
             onboardingSection.style.display = 'none';
         }
     });
 
-    // Функция для динамического создания блока онбординга
+    // 7) Функция отображения онбординга
     function showOnboarding() {
-        const container = onboardingSection;
-        container.innerHTML = '';
-        container.style.display = 'block';
+        onboardingSection.innerHTML = '';
+        onboardingSection.style.display = 'block';
 
-        const introDiv = document.createElement('div');
-        introDiv.className = 'onboarding-intro';
-        introDiv.innerHTML = 
+        const intro = document.createElement('div');
+        intro.className = 'onboarding-intro';
+        intro.innerHTML =
             'Hello! I&rsquo;m the NeuroSOL Assistant.<br>' +
             'I&rsquo;m here to help you with Autism Spectrum Disorder and related developmental needs.<br>' +
             'Please choose one of the questions below.';
-        container.appendChild(introDiv);
+        onboardingSection.appendChild(intro);
 
         const questionsDiv = document.createElement('div');
         questionsDiv.id = 'onboarding';
         questionsDiv.className = 'onboarding-questions';
-        const starterQuestions = [
+        const starterQs = [
             'What is autism?',
             'How can I help my child learn to communicate?',
             'Which therapy methods are most effective?'
         ];
-        starterQuestions.forEach(text => {
+        starterQs.forEach(text => {
             const btn = document.createElement('button');
             btn.className = 'onboarding-question';
             btn.textContent = text;
             btn.addEventListener('click', () => {
-                container.style.display = 'none';
+                onboardingSection.style.display = 'none';
                 input.value = text;
                 form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
             });
             questionsDiv.appendChild(btn);
         });
-        container.appendChild(questionsDiv);
+        onboardingSection.appendChild(questionsDiv);
 
         const orDiv = document.createElement('div');
         orDiv.className = 'onboarding-custom';
         orDiv.textContent = 'or ask your own question 👇';
-        container.appendChild(orDiv);
+        onboardingSection.appendChild(orDiv);
     }
 
-    // Создание элемента сообщения
+    // 8) Вспомогательные для сообщений
     function createMessageRow(role, content, isLoading = false) {
         const row = document.createElement('div');
         row.className = `chat-row ${role}`;
@@ -112,103 +131,96 @@ document.addEventListener('DOMContentLoaded', () => {
             row.appendChild(icon);
             row.appendChild(bubble);
         }
-
         return row;
     }
 
-    // Добавление сообщения в чат
     function appendMessage(role, content) {
         const row = createMessageRow(role, content);
         chat.appendChild(row);
         return row;
     }
 
-    // Автоматическое изменение высоты textarea
+    // 9) Авто-рост textarea
     function adjustTextareaHeight() {
         input.style.height = '0px';
         input.style.height = 'auto';
         requestAnimationFrame(() => {
-            let newH = input.scrollHeight;
+            let h = input.scrollHeight;
             const st = getComputedStyle(input);
             const maxH = parseFloat(st.maxHeight);
             const minH = parseFloat(st.minHeight);
-            newH = Math.max(minH, Math.min(maxH, newH));
-            input.style.height = newH + 'px';
-            input.style.overflowY = input.scrollHeight > newH ? 'auto' : 'hidden';
+            h = Math.max(minH, Math.min(maxH, h));
+            input.style.height = h + 'px';
+            input.style.overflowY = input.scrollHeight > h ? 'auto' : 'hidden';
         });
     }
 
-    // Обработчик отправки формы
-    form.addEventListener('submit', async (e) => {
+    // 10) Отправка формы
+    form.addEventListener('submit', async e => {
         e.preventDefault();
         const question = input.value.trim();
         if (!question) return;
 
         onboardingSection.style.display = 'none';
 
+        // Добавляем временно новый sessionId, если его ещё нет
+        if (!currentSessionId) {
+            currentSessionId = crypto.randomUUID();
+            sessionStorage.setItem('sessionId', currentSessionId);
+        }
+
+        // Собираем тело запроса
+        const requestBody = { question, messages, userId, sessionId: currentSessionId };
+
+        // Пушим пользовательский вопрос в историю
         messages.push({ role: 'user', content: question });
+        saveHistory();
         appendMessage('user', question);
+
+        // Готовим индикатор загрузки
         input.value = '';
         input.style.height = 'auto';
-
-        const statusPhrases = [
-            'Searching for information',
-            'Checking documents',
-            'Preparing response'
-        ];
-        let phraseIndex = 0;
-
-        const loadingRow = createMessageRow('bot', statusPhrases[phraseIndex], true);
+        const statuses = ['Searching for information', 'Checking documents', 'Preparing response'];
+        let idx = 0;
+        const loadingRow = createMessageRow('bot', statuses[idx], true);
         loadingRow.querySelector('.chat-icon').innerHTML =
             '<img src="bot-icon.svg" class="spinner" width="32" height="32" alt="Loading...">';
         const loadingBubble = loadingRow.querySelector('.chat-bubble.bot');
-        loadingBubble.textContent = statusPhrases[phraseIndex];
         chat.appendChild(loadingRow);
         chat.scrollTop = chat.scrollHeight;
-
-        const phraseInterval = setInterval(() => {
-            phraseIndex = (phraseIndex + 1) % statusPhrases.length;
-            loadingBubble.textContent = statusPhrases[phraseIndex];
+        const timer = setInterval(() => {
+            idx = (idx + 1) % statuses.length;
+            loadingBubble.textContent = statuses[idx];
         }, 2000);
 
         try {
-            const requestBody = { question, messages, userId };
-            if (currentSessionId) requestBody.sessionId = currentSessionId;
-
             const res = await fetch(`${API_BASE}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody),
             });
             if (!res.ok) {
-                let errorData;
-                try { errorData = await res.json(); }
-                catch { errorData = { answer: `Server error: ${res.status}` }; }
-                throw new Error(errorData.answer || `Server error: ${res.status}`);
+                let err;
+                try { err = await res.json(); }
+                catch { err = { answer: `Server error ${res.status}` }; }
+                throw new Error(err.answer || `Error ${res.status}`);
             }
             const data = await res.json();
 
-            clearInterval(phraseInterval);
+            clearInterval(timer);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
 
-            const botAnswer = data.answer || '<span class="error">Sorry, I couldn\'t generate a response.</span>';
-            messages.push({ role: 'assistant', content: botAnswer });
-            const botRow = appendMessage('bot', botAnswer);
-
+            const answer = data.answer || '<span class="error">Sorry, no response.</span>';
+            messages.push({ role: 'assistant', content: answer });
+            saveHistory();
+            const botRow = appendMessage('bot', answer);
             botRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            if (data.sessionId && data.sessionId !== currentSessionId) {
-                currentSessionId = data.sessionId;
-                localStorage.setItem('sessionId', currentSessionId);
-            }
         } catch (err) {
-            console.error('Error fetching response:', err);
-            clearInterval(phraseInterval);
+            console.error('Fetch error:', err);
+            clearInterval(timer);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
-
-            const msg = err.message || 'Sorry, the server is temporarily unavailable.';
-            const errRow = appendMessage('bot', `<span class="error">${msg}</span>`);
-            errRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const msg = `<span class="error">${err.message}</span>`;
+            appendMessage('bot', msg).scrollIntoView({ behavior: 'smooth', block: 'start' });
         } finally {
             adjustTextareaHeight();
         }
