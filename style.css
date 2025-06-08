@@ -34,6 +34,7 @@ html, body {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     background: var(--bg);
+    overflow-x: hidden;
 }
 
 .chat-wrapper {
@@ -75,6 +76,7 @@ html, body {
 .chat {
   flex: 1;
   overflow-y: auto; /* Скролл для сообщений */
+  overflow-x: hidden;
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
@@ -240,13 +242,18 @@ html, body {
 @media (max-width: 600px) {
     body {
         padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
+        overflow-x: hidden;
     }
     .chat-wrapper {
         padding: 10px;
+        overflow-x: hidden;
     }
     .chat-header {
         font-size: 20px;
         margin-bottom: 15px;
+    }
+    .chat {
+      overflow-x: hidden;
     }
     .chat-bubble {
         font-size: 15px;
