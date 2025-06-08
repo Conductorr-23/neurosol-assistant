@@ -48,7 +48,8 @@ html, body {
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  overflow: hidden; /* Обрезаем содержимое, которое выходит за границы */
+  overflow-x: hidden; /* Обрезаем содержимое, которое выходит за границы */
+  overflow-y: scroll;
 }
 
 .chat-logo {
@@ -78,6 +79,9 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.chat:has(.chat-row.bot) {
+    min-height: calc(100vh / 3 * 2 - 60px);
 }
 
 /* Стили для скроллбара (только для Webkit браузеров) */
