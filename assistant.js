@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return row;
     }
 
-    // 9) Авто-рост textarea до 7 строк, скролл внутри при переполнении (с 4-й строки)
+    // 9) Авто-рост textarea до 7 строк, скролл внутри при переполнении (с 8-й строки)
 function adjustTextareaHeight() {
     input.style.height = 'auto'; // Сбрасываем высоту, чтобы получить scrollHeight
     requestAnimationFrame(() => {
@@ -156,29 +156,20 @@ function adjustTextareaHeight() {
         const st = getComputedStyle(input);
         const minH = parseFloat(st.minHeight); // Получаем min-height (3 строки) из CSS
         const maxH = parseFloat(st.maxHeight); // Получаем max-height (7 строк) из CSS
-        const lineHeight = parseFloat(st.lineHeight) * parseFloat(st.fontSize); // Рассчитываем реальную высоту строки в px
 
         let newH = currentScrollHeight;
 
-        // Если текущая высота (или количество строк) превышает 3, но не достигла 7,
-        // то устанавливаем высоту по scrollHeight, но не меньше minH
+        // Высота не должна быть меньше minH (3 строки)
         newH = Math.max(minH, newH);
 
-        // Ограничиваем высоту максимальным значением (7 строк)
+        // Высота не должна быть больше maxH (7 строк)
         newH = Math.min(maxH, newH);
 
         input.style.height = newH + 'px';
 
-        // Определяем, когда должен появиться скролл
-        // Скролл должен появиться, когда текст переходит на 4-ю строку.
-        // Для этого сравниваем currentScrollHeight с высотой 3 строк.
-        const heightFor3Lines = minH; // minH уже рассчитан на 3 строки
-
-        if (currentScrollHeight > heightFor3Lines) { // Если текст занимает 4 строки или больше
-            input.style.overflowY = 'auto';
-        } else {
-            input.style.overflowY = 'hidden';
-        }
+        // Скролл должен появиться только если фактический scrollHeight
+        // превышает максимальную высоту (7 строк)
+        input.style.overflowY = currentScrollHeight > maxH ? 'auto' : 'hidden';
     });
 }
 
