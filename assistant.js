@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 messages.push(...hist);
                 onboardingSection.style.display = 'none';
             } catch (e) {
-                console.warn('Не удалось восстановить историю:', e);
+                console.warn('Не удалось восстановить истории:', e);
             }
         }
     } else {
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showOnboarding();
     }
 
-    // 6) При вводе вручную скрываем онбординг
+    // 6) Скрываем онбординг при вводе вручную
     input.addEventListener('input', () => {
         if (onboardingSection.style.display !== 'none') {
             onboardingSection.style.display = 'none';
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         onboardingSection.appendChild(orDiv);
     }
 
-    // 8) Вспомогательные для сообщений
+    // 8) Создание элемента сообщения
     function createMessageRow(role, content, isLoading = false) {
         const row = document.createElement('div');
         row.className = `chat-row ${role}`;
@@ -118,8 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const bubble = document.createElement('div');
         bubble.className = `chat-bubble ${role}`;
+
         if (role === 'bot' && !isLoading) {
-            bubble.innerHTML = marked.parse(content);
+            // Восстанавливаем HTML-разметку прямо из content
+            bubble.innerHTML = content;
         } else {
             bubble.textContent = content;
         }
@@ -131,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.appendChild(icon);
             row.appendChild(bubble);
         }
+
         return row;
     }
 
@@ -140,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return row;
     }
 
-    // 9) Авто-рост textarea
+    // 9) Авто-рост textarea до 5 строк, скролл внутри при переполнении
     function adjustTextareaHeight() {
         input.style.height = '0px';
         input.style.height = 'auto';
@@ -155,31 +158,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 10) Отправка формы
+    // 10) Отправка формы с анимацией смены фраз
     form.addEventListener('submit', async e => {
         e.preventDefault();
         const question = input.value.trim();
         if (!question) return;
 
+        // Скрыть онбординг
         onboardingSection.style.display = 'none';
 
-        // Добавляем временно новый sessionId, если его ещё нет
+        // Инициализировать sessionId, если ещё нет
         if (!currentSessionId) {
             currentSessionId = crypto.randomUUID();
             sessionStorage.setItem('sessionId', currentSessionId);
         }
 
-        // Собираем тело запроса
+        // Запрос
         const requestBody = { question, messages, userId, sessionId: currentSessionId };
 
-        // Пушим пользовательский вопрос в историю
+        // Добавить пользовательское сообщение
         messages.push({ role: 'user', content: question });
         saveHistory();
         appendMessage('user', question);
 
-        // Готовим индикатор загрузки
+        // Сброс input
         input.value = '';
-        input.style.height = 'auto';
+        adjustTextareaHeight();
+
+        // Индикатор загрузки
         const statuses = ['Searching for information', 'Checking documents', 'Preparing response'];
         let idx = 0;
         const loadingRow = createMessageRow('bot', statuses[idx], true);
@@ -201,20 +207,27 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!res.ok) {
                 let err;
-                try { err = await res.json(); }
-                catch { err = { answer: `Server error ${res.status}` }; }
+                try { err = await res.json(); } catch { err = { answer: `Server error ${res.status}` }; }
                 throw new Error(err.answer || `Error ${res.status}`);
             }
             const data = await res.json();
 
+            // Убираем загрузчик
             clearInterval(timer);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
 
+            // Добавляем ответ
             const answer = data.answer || '<span class="error">Sorry, no response.</span>';
             messages.push({ role: 'assistant', content: answer });
             saveHistory();
             const botRow = appendMessage('bot', answer);
             botRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Обновляем sessionId из сервера, если изменился
+            if (data.sessionId && data.sessionId !== currentSessionId) {
+                currentSessionId = data.sessionId;
+                sessionStorage.setItem('sessionId', currentSessionId);
+            }
         } catch (err) {
             console.error('Fetch error:', err);
             clearInterval(timer);
@@ -226,6 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Подписка на изменение размера и ввод
     input.addEventListener('input', adjustTextareaHeight);
     window.addEventListener('load', adjustTextareaHeight);
     window.addEventListener('resize', adjustTextareaHeight);
