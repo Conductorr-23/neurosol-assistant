@@ -193,15 +193,15 @@ html, body {
   font-size: 16px;
   resize: none;
   /* 🔥 ИЗМЕНЕНИЕ: min-height для 3 строк */
-  min-height: calc((16px * 1.6 * 3) + (12px * 2)); /* 3 строки * font-size * line-height + 2 * padding-top/bottom */
-  /* 🔥 ИЗМЕНЕНИЕ: max-height для 5 строк */
-  max-height: calc((16px * 1.6 * 6) + (12px * 2)); /* 5 строк * font-size * line-height + 2 * padding-top/bottom */
+  min-height: calc((16px * 1.6 * 3) + (12px * 2));
+  /* 🔥 ИЗМЕНЕНИЕ: max-height для 7 строк */
+  max-height: calc((16px * 1.6 * 7) + (12px * 2));
   line-height: 1.6;
   font-family: var(--font-main);
   
   display: block;
   width: 100%;
-  overflow-y: hidden; /* Изначально скрываем скролл, JS будет управлять */
+  /* 🔥 УДАЛЕНИЕ: overflow-y: hidden; - теперь JS будет управлять */
 }
 
 .chat-footer button {
@@ -271,11 +271,11 @@ html, body {
     .chat-footer input,
     .chat-footer textarea {
         font-size: 15px;
-        line-height: 1.5; /* Для мобильных line-height 1.5 */
+        line-height: 1.5;
         /* 🔥 ИЗМЕНЕНИЕ: min-height для 3 строк на мобильных */
-        min-height: calc((15px * 1.5 * 3) + (10px * 2)); /* 3 строки * font-size * line-height + 2 * padding-top/bottom */
-        /* 🔥 ИЗМЕНЕНИЕ: max-height для 5 строк на мобильных */
-        max-height: calc((15px * 1.5 * 6) + (10px * 2)); /* 5 строк * font-size * line-height + 2 * padding-top/bottom */
+        min-height: calc((15px * 1.5 * 3) + (10px * 2));
+        /* 🔥 ИЗМЕНЕНИЕ: max-height для 7 строк на мобильных */
+        max-height: calc((15px * 1.5 * 7) + (10px * 2));
     }
 }
 .error {
