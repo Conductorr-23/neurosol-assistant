@@ -110,6 +110,9 @@ html, body {
 .chat-row.user {
   justify-content: flex-end;
 }
+.chat-row.bot {
+    scroll-margin-top: 10px; 
+}
 
 .chat-icon {
   flex-shrink: 0;

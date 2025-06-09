@@ -32,8 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4) Функция сохранения истории (без сообщений-ошибок)
     function saveHistory() {
         if (!currentSessionId) return;
-        // Сохраняем "сырой" контент, как он пришел от сервера (Markdown или HTML-ошибка).
-        // Роль сохраняем как 'assistant' для бота, как она приходит от сервера/GPT.
         const toSave = messages.filter(m =>
             !(m.role === 'assistant' && m.content.includes('class="error"'))
         );
@@ -48,21 +46,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const hist = JSON.parse(saved);
                 hist.forEach(m => {
                     let displayContent = m.content;
-                    let displayRole = m.role; // Исходная роль из истории
+                    let displayRole = m.role;
 
-                    // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Если роль из истории - 'assistant',
-                    // для отображения используем 'bot'.
-                    // Marked.js будет парсить содержимое сообщения бота.
                     if (m.role === 'assistant') {
-                        displayRole = 'bot'; // Устанавливаем роль для отображения на 'bot'
+                        displayRole = 'bot'; // Для отображения всегда используем 'bot'
                         displayContent = marked.parse(m.content); 
                     }
-                    // Для пользователя m.role уже 'user', что корректно.
                     
-                    appendMessage(displayRole, displayContent); // Передаем роль для отображения
+                    appendMessage(displayRole, displayContent); 
                 });
-                // Важно: в массив `messages` добавляем исходный, сырой контент (Markdown)
-                // Он нужен для отправки на сервер в последующих запросах.
                 messages.push(...hist); 
                 onboardingSection.style.display = 'none';
             } catch (e) {
@@ -70,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     } else {
-        // новая вкладка => онбординг
         showOnboarding();
     }
 
@@ -125,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 8) Создание элемента сообщения
     function createMessageRow(role, content, isLoading = false) {
         const row = document.createElement('div');
-        row.className = `chat-row ${role}`; // Здесь будут классы 'user' или 'bot'
+        row.className = `chat-row ${role}`;
 
         const icon = document.createElement('div');
         icon.className = 'chat-icon';
@@ -138,15 +129,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const bubble = document.createElement('div');
-        bubble.className = `chat-bubble ${role}`; // Здесь будут классы 'user' или 'bot'
+        bubble.className = `chat-bubble ${role}`;
 
-        // 🔥 КЛЮЧЕВОЕ МЕСТО: Проверка на 'bot' для использования innerHTML
         if (role === 'bot' && !isLoading) {
-            bubble.innerHTML = content; // content уже должен быть HTML-разметкой
+            bubble.innerHTML = content;
         } else if (isLoading) {
-            bubble.textContent = ''; // Для загрузочных сообщений
+            bubble.textContent = '';
         } else {
-            bubble.textContent = content; // Для пользователя всегда простой текст
+            bubble.textContent = content;
         }
 
         if (role === 'user') {
@@ -163,7 +153,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function appendMessage(role, content, isLoading = false) {
         const row = createMessageRow(role, content, isLoading);
         chat.appendChild(row);
-        chat.scrollTop = chat.scrollHeight;
+        
+        // 🔥 ИЗМЕНЕНИЕ: Управляем прокруткой здесь
+        if (role === 'bot' && !isLoading) { // Для окончательных сообщений бота
+            requestAnimationFrame(() => {
+                row.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                // Если нужно добавить отступ сверху после скролла:
+                // chat.scrollTop -= 20; // Например, 20px
+            });
+        } else {
+             // Для сообщений пользователя или загрузочных сообщений прокручиваем к самому низу
+             chat.scrollTop = chat.scrollHeight; 
+        }
+        
         return row;
     }
 
@@ -242,24 +247,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const rawAnswer = data.answer || '<span class="error">Sorry, no response.</span>';
-            // Всегда парсим ответ бота с помощью marked.parse().
-            // Marked.js обычно хорошо справляется с HTML, встроенным в Markdown,
-            // и корректно обрабатывает чистый Markdown.
             const renderedAnswer = marked.parse(rawAnswer); 
 
-            // Сохраняем роль как 'assistant', как она приходит от сервера/GPT,
-            // для дальнейшей отправки на сервер.
             messages.push({ role: 'assistant', content: rawAnswer }); 
             saveHistory();
-            // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Всегда передаем 'bot' для отображения сообщений бота
-            appendMessage('bot', renderedAnswer); 
+            appendMessage('bot', renderedAnswer); // Передаем 'bot' для отображения
 
         } catch (err) {
             console.error('Fetch error:', err);
             clearInterval(timer);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
-            // Сообщение об ошибке уже содержит HTML-теги.
-            // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Всегда передаем 'bot' для отображения ошибок бота
             appendMessage('bot', `<span class="error">${err.message}</span>`); 
         } finally {
             adjustTextareaHeight();
@@ -267,6 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     input.addEventListener('input', adjustTextareaHeight);
-    window.addEventListener('load', adjustTextareaHeight); // Вызываем на полную загрузку страницы (включая стили)
+    window.addEventListener('load', adjustTextareaHeight); 
     window.addEventListener('resize', adjustTextareaHeight);
 });
