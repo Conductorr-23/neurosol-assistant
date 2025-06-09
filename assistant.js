@@ -32,7 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4) Функция сохранения истории (без сообщений-ошибок)
     function saveHistory() {
         if (!currentSessionId) return;
-        // Сохраняем "сырой" контент, как он пришел от сервера (Markdown или HTML-ошибка)
+        // Сохраняем "сырой" контент, как он пришел от сервера (Markdown или HTML-ошибка).
+        // Роль сохраняем как 'assistant' для бота, как она приходит от сервера/GPT.
         const toSave = messages.filter(m =>
             !(m.role === 'assistant' && m.content.includes('class="error"'))
         );
@@ -47,14 +48,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const hist = JSON.parse(saved);
                 hist.forEach(m => {
                     let displayContent = m.content;
-                    // 🔥 ИЗМЕНЕНИЕ: При восстановлении всегда пытаемся парсить Markdown,
-                    // если это сообщение бота. marked.js обработает и обычный текст, и Markdown.
-                    // Сообщения об ошибках уже содержат HTML, но marked.parse() должен
-                    // с ними справиться, не ломая их.
+                    let displayRole = m.role; // Исходная роль из истории
+
+                    // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Если роль из истории - 'assistant',
+                    // для отображения используем 'bot'.
+                    // Marked.js будет парсить содержимое сообщения бота.
                     if (m.role === 'assistant') {
+                        displayRole = 'bot'; // Устанавливаем роль для отображения на 'bot'
                         displayContent = marked.parse(m.content); 
                     }
-                    appendMessage(m.role, displayContent);
+                    // Для пользователя m.role уже 'user', что корректно.
+                    
+                    appendMessage(displayRole, displayContent); // Передаем роль для отображения
                 });
                 // Важно: в массив `messages` добавляем исходный, сырой контент (Markdown)
                 // Он нужен для отправки на сервер в последующих запросах.
@@ -120,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 8) Создание элемента сообщения
     function createMessageRow(role, content, isLoading = false) {
         const row = document.createElement('div');
-        row.className = `chat-row ${role}`;
+        row.className = `chat-row ${role}`; // Здесь будут классы 'user' или 'bot'
 
         const icon = document.createElement('div');
         icon.className = 'chat-icon';
@@ -133,16 +138,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const bubble = document.createElement('div');
-        bubble.className = `chat-bubble ${role}`;
+        bubble.className = `chat-bubble ${role}`; // Здесь будут классы 'user' или 'bot'
 
-        // Здесь формируется содержимое пузыря сообщения
-        // Для бота используем innerHTML, чтобы отобразить HTML-разметку (из Markdown)
+        // 🔥 КЛЮЧЕВОЕ МЕСТО: Проверка на 'bot' для использования innerHTML
         if (role === 'bot' && !isLoading) {
             bubble.innerHTML = content; // content уже должен быть HTML-разметкой
         } else if (isLoading) {
-            bubble.textContent = '';
+            bubble.textContent = ''; // Для загрузочных сообщений
         } else {
-            bubble.textContent = content; // Для пользователя просто текст
+            bubble.textContent = content; // Для пользователя всегда простой текст
         }
 
         if (role === 'user') {
@@ -238,20 +242,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const rawAnswer = data.answer || '<span class="error">Sorry, no response.</span>';
-            // 🔥 ИЗМЕНЕНИЕ: Всегда парсим ответ бота с помощью marked.parse().
+            // Всегда парсим ответ бота с помощью marked.parse().
             // Marked.js обычно хорошо справляется с HTML, встроенным в Markdown,
             // и корректно обрабатывает чистый Markdown.
             const renderedAnswer = marked.parse(rawAnswer); 
 
-            messages.push({ role: 'assistant', content: rawAnswer }); // В историю сообщений добавляем сырой Markdown
+            // Сохраняем роль как 'assistant', как она приходит от сервера/GPT,
+            // для дальнейшей отправки на сервер.
+            messages.push({ role: 'assistant', content: rawAnswer }); 
             saveHistory();
-            appendMessage('bot', renderedAnswer); // Отображаем уже отрендеренный HTML
+            // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Всегда передаем 'bot' для отображения сообщений бота
+            appendMessage('bot', renderedAnswer); 
 
         } catch (err) {
             console.error('Fetch error:', err);
             clearInterval(timer);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
-            // Сообщение об ошибке уже содержит HTML-теги, поэтому его не парсим.
+            // Сообщение об ошибке уже содержит HTML-теги.
+            // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Всегда передаем 'bot' для отображения ошибок бота
             appendMessage('bot', `<span class="error">${err.message}</span>`); 
         } finally {
             adjustTextareaHeight();
