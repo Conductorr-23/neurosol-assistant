@@ -49,14 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     let displayRole = m.role;
 
                     if (m.role === 'assistant') {
-                        displayRole = 'bot'; // Для отображения всегда используем 'bot'
+                        displayRole = 'bot';
                         displayContent = marked.parse(m.content); 
                     }
                     
                     appendMessage(displayRole, displayContent); 
                 });
                 messages.push(...hist); 
-                onboardingSection.style.display = 'none';
+                // onboardingSection.style.display = 'none'; // 🔥 УДАЛЯЕМ - онбординг скрывается при отправке первого сообщения
             } catch (e) {
                 console.warn('Не удалось восстановить историю:', e);
             }
@@ -66,12 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 6) При вводе вручную скрываем онбординг и растягиваем textarea
-    input.addEventListener('input', () => {
-        if (onboardingSection.style.display !== 'none') {
-            onboardingSection.style.display = 'none';
-        }
-        adjustTextareaHeight();
-    });
+    // 🔥 ИЗМЕНЕНО: УДАЛЯЕМ этот обработчик, чтобы онбординг не скрывался при печати
+    // input.addEventListener('input', () => {
+    //     if (onboardingSection.style.display !== 'none') {
+    //         onboardingSection.style.display = 'none';
+    //     }
+    //     adjustTextareaHeight();
+    // });
+    input.addEventListener('input', adjustTextareaHeight); // Оставляем только для auto-resize
 
     // 7) Функция отображения онбординга
     function showOnboarding() {
@@ -99,7 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.className = 'onboarding-question';
             btn.textContent = text;
             btn.addEventListener('click', () => {
-                onboardingSection.style.display = 'none';
+                // 🔥 ИЗМЕНЕНО: Онбординг скрывается при нажатии кнопки-вопроса
+                onboardingSection.style.display = 'none'; 
                 input.value = text;
                 form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
             });
@@ -155,18 +158,20 @@ document.addEventListener('DOMContentLoaded', () => {
         chat.appendChild(row);
         
         // 🔥 ИЗМЕНЕНИЕ: Управляем прокруткой здесь
-        if (role === 'bot' && !isLoading) { // Для окончательных сообщений бота
+        // Прокрутка к самому низу для всех сообщений, кроме окончательного ответа бота
+        if (role === 'user' || isLoading) { 
+            chat.scrollTop = chat.scrollHeight; 
+        } else if (role === 'bot' && !isLoading) { // Для окончательного ответа бота
             requestAnimationFrame(() => {
+                // Убедимся, что прокручивается именно контейнер chat
+                // block: 'start' означает выравнивание элемента по верхнему краю видимой области
                 row.scrollIntoView({
                     behavior: 'smooth',
-                    block: 'start'
+                    block: 'start',
+                    // `boundary` можно использовать, если у вас несколько прокручиваемых элементов,
+                    // но для простых случаев обычно достаточно `block: 'start'` и правильной CSS-модели.
                 });
-                // Если нужно добавить отступ сверху после скролла:
-                // chat.scrollTop -= 20; // Например, 20px
             });
-        } else {
-             // Для сообщений пользователя или загрузочных сообщений прокручиваем к самому низу
-             chat.scrollTop = chat.scrollHeight; 
         }
         
         return row;
@@ -196,7 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const question = input.value.trim();
         if (!question) return;
 
-        onboardingSection.style.display = 'none';
+        // 🔥 ИЗМЕНЕНИЕ: Скрываем онбординг СРАЗУ ПЕРЕД отправкой сообщения
+        if (onboardingSection.style.display !== 'none') {
+            onboardingSection.style.display = 'none';
+        }
 
         if (!currentSessionId) {
             currentSessionId = crypto.randomUUID();
@@ -251,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             messages.push({ role: 'assistant', content: rawAnswer }); 
             saveHistory();
-            appendMessage('bot', renderedAnswer); // Передаем 'bot' для отображения
+            appendMessage('bot', renderedAnswer); 
 
         } catch (err) {
             console.error('Fetch error:', err);
