@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4) Функция сохранения истории (без сообщений-ошибок)
     function saveHistory() {
         if (!currentSessionId) return;
+        // Сохраняем "сырой" контент (который может быть Markdown или уже HTML для ошибок)
         const toSave = messages.filter(m =>
             !(m.role === 'assistant' && m.content.includes('class="error"'))
         );
@@ -44,8 +45,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saved) {
             try {
                 const hist = JSON.parse(saved);
-                hist.forEach(m => appendMessage(m.role, m.content));
-                messages.push(...hist);
+                // 🔥 ИЗМЕНЕНИЕ ЗДЕСЬ: Преобразуем контент в HTML перед отображением
+                hist.forEach(m => {
+                    let displayContent = m.content;
+                    // Если это сообщение бота и оно не содержит HTML-ошибки,
+                    // то предполагаем Markdown и парсим его.
+                    if (m.role === 'assistant' && !m.content.includes('<span class="error">')) {
+                        displayContent = marked.parse(m.content);
+                    }
+                    appendMessage(m.role, displayContent);
+                });
+                messages.push(...hist); // Добавляем исходные (сырые) сообщения в текущий массив
                 onboardingSection.style.display = 'none';
             } catch (e) {
                 console.warn('Не удалось восстановить историю:', e);
@@ -122,12 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const bubble = document.createElement('div');
         bubble.className = `chat-bubble ${role}`;
 
+        // Здесь формируется содержимое пузыря сообщения
+        // Для бота используем innerHTML, чтобы отобразить HTML-разметку (из Markdown)
         if (role === 'bot' && !isLoading) {
-            bubble.innerHTML = content;
+            bubble.innerHTML = content; // content уже должен быть HTML-разметкой
         } else if (isLoading) {
             bubble.textContent = '';
         } else {
-            bubble.textContent = content;
+            bubble.textContent = content; // Для пользователя просто текст
         }
 
         if (role === 'user') {
@@ -148,30 +160,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return row;
     }
 
-    // 9) Авто-рост textarea до 7 строк, скролл внутри при переполнении (с 8-й строки)
-function adjustTextareaHeight() {
-    input.style.height = 'auto'; // Сбрасываем высоту, чтобы получить scrollHeight
-    requestAnimationFrame(() => {
-        let currentScrollHeight = input.scrollHeight;
-        const st = getComputedStyle(input);
-        const minH = parseFloat(st.minHeight); // Получаем min-height (3 строки) из CSS
-        const maxH = parseFloat(st.maxHeight); // Получаем max-height (7 строк) из CSS
+    // 9) Авто-рост textarea
+    function adjustTextareaHeight() {
+        input.style.height = 'auto';
+        requestAnimationFrame(() => {
+            let currentScrollHeight = input.scrollHeight;
+            const st = getComputedStyle(input);
+            const minH = parseFloat(st.minHeight);
+            const maxH = parseFloat(st.maxHeight);
 
-        let newH = currentScrollHeight;
+            let newH = currentScrollHeight;
+            newH = Math.max(minH, newH);
+            newH = Math.min(maxH, newH);
 
-        // Высота не должна быть меньше minH (3 строки)
-        newH = Math.max(minH, newH);
-
-        // Высота не должна быть больше maxH (7 строк)
-        newH = Math.min(maxH, newH);
-
-        input.style.height = newH + 'px';
-
-        // Скролл должен появиться только если фактический scrollHeight
-        // превышает максимальную высоту (7 строк)
-        input.style.overflowY = currentScrollHeight > maxH ? 'auto' : 'hidden';
-    });
-}
+            input.style.height = newH + 'px';
+            input.style.overflowY = currentScrollHeight > minH ? 'auto' : 'hidden';
+        });
+    }
 
     // 10) Отправка формы с анимацией смены фраз
     form.addEventListener('submit', async (e) => {
@@ -229,14 +234,20 @@ function adjustTextareaHeight() {
                 sessionStorage.setItem('sessionId', currentSessionId);
             }
 
-            const answer = data.answer || '<span class="error">Sorry, no response.</span>';
-            messages.push({ role: 'assistant', content: answer });
+            const rawAnswer = data.answer || '<span class="error">Sorry, no response.</span>';
+            // 🔥 ИЗМЕНЕНИЕ: Преобразуем Markdown в HTML для отображения.
+            // Если ответ уже содержит HTML (например, <span class="error">), не парсим его Markdown.
+            const renderedAnswer = rawAnswer.includes('<span class="error">') ? rawAnswer : marked.parse(rawAnswer);
+
+            messages.push({ role: 'assistant', content: rawAnswer }); // В историю сообщений добавляем сырой Markdown
             saveHistory();
-            appendMessage('bot', answer);
+            appendMessage('bot', renderedAnswer); // Отображаем уже отрендеренный HTML
+
         } catch (err) {
             console.error('Fetch error:', err);
             clearInterval(timer);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
+            // Если ошибка, то сообщение об ошибке уже содержит HTML-теги, поэтому не парсим его через marked.parse
             appendMessage('bot', `<span class="error">${err.message}</span>`);
         } finally {
             adjustTextareaHeight();
@@ -244,6 +255,6 @@ function adjustTextareaHeight() {
     });
 
     input.addEventListener('input', adjustTextareaHeight);
-    window.addEventListener('load', adjustTextareaHeight);
+    window.addEventListener('load', adjustTextareaHeight); // Вызываем на полную загрузку страницы (включая стили)
     window.addEventListener('resize', adjustTextareaHeight);
 });
