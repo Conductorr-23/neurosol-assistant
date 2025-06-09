@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4) Функция сохранения истории (без сообщений-ошибок)
     function saveHistory() {
         if (!currentSessionId) return;
-        // Сохраняем "сырой" контент (который может быть Markdown или уже HTML для ошибок)
+        // Сохраняем "сырой" контент, как он пришел от сервера (Markdown или HTML-ошибка)
         const toSave = messages.filter(m =>
             !(m.role === 'assistant' && m.content.includes('class="error"'))
         );
@@ -45,17 +45,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saved) {
             try {
                 const hist = JSON.parse(saved);
-                // 🔥 ИЗМЕНЕНИЕ ЗДЕСЬ: Преобразуем контент в HTML перед отображением
                 hist.forEach(m => {
                     let displayContent = m.content;
-                    // Если это сообщение бота и оно не содержит HTML-ошибки,
-                    // то предполагаем Markdown и парсим его.
-                    if (m.role === 'assistant' && !m.content.includes('<span class="error">')) {
-                        displayContent = marked.parse(m.content);
+                    // 🔥 ИЗМЕНЕНИЕ: При восстановлении всегда пытаемся парсить Markdown,
+                    // если это сообщение бота. marked.js обработает и обычный текст, и Markdown.
+                    // Сообщения об ошибках уже содержат HTML, но marked.parse() должен
+                    // с ними справиться, не ломая их.
+                    if (m.role === 'assistant') {
+                        displayContent = marked.parse(m.content); 
                     }
                     appendMessage(m.role, displayContent);
                 });
-                messages.push(...hist); // Добавляем исходные (сырые) сообщения в текущий массив
+                // Важно: в массив `messages` добавляем исходный, сырой контент (Markdown)
+                // Он нужен для отправки на сервер в последующих запросах.
+                messages.push(...hist); 
                 onboardingSection.style.display = 'none';
             } catch (e) {
                 console.warn('Не удалось восстановить историю:', e);
@@ -235,9 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const rawAnswer = data.answer || '<span class="error">Sorry, no response.</span>';
-            // 🔥 ИЗМЕНЕНИЕ: Преобразуем Markdown в HTML для отображения.
-            // Если ответ уже содержит HTML (например, <span class="error">), не парсим его Markdown.
-            const renderedAnswer = rawAnswer.includes('<span class="error">') ? rawAnswer : marked.parse(rawAnswer);
+            // 🔥 ИЗМЕНЕНИЕ: Всегда парсим ответ бота с помощью marked.parse().
+            // Marked.js обычно хорошо справляется с HTML, встроенным в Markdown,
+            // и корректно обрабатывает чистый Markdown.
+            const renderedAnswer = marked.parse(rawAnswer); 
 
             messages.push({ role: 'assistant', content: rawAnswer }); // В историю сообщений добавляем сырой Markdown
             saveHistory();
@@ -247,8 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Fetch error:', err);
             clearInterval(timer);
             if (chat.contains(loadingRow)) chat.removeChild(loadingRow);
-            // Если ошибка, то сообщение об ошибке уже содержит HTML-теги, поэтому не парсим его через marked.parse
-            appendMessage('bot', `<span class="error">${err.message}</span>`);
+            // Сообщение об ошибке уже содержит HTML-теги, поэтому его не парсим.
+            appendMessage('bot', `<span class="error">${err.message}</span>`); 
         } finally {
             adjustTextareaHeight();
         }
