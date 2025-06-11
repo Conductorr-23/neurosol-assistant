@@ -182,8 +182,9 @@ app.post('/chat', async (req, res) => {
     ];
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o', // Или 'o3'
       messages: messagesForGPT,
+      temperature: 0.4, // Добавили параметр температуры
     });
     let answerEng = completion.choices[0].message.content.trim();
 
