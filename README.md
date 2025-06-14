@@ -8,7 +8,7 @@ This project is a working prototype of the NeuroSOL virtual assistant, which use
 
 ```
 📁 NeuroSOL/
-├── assistant.html        ← Chat interface
+├── index.html        ← Chat interface
 ├── assistant.js          ← Sends questions to backend
 ├── server.js             ← Node.js server with context memory and document search
 ├── upload.html           ← UI for uploading knowledge files
@@ -26,7 +26,7 @@ This project is a working prototype of the NeuroSOL virtual assistant, which use
 ### 1. Open Terminal and go to your project folder:
 
 ```bash
-cd /Users/rinatbiktasev/Library/CloudStorage/GoogleDrive-biktashev.rinat@gmail.com/Мой\ диск/Сопровождение\ онлайн-проектов/SOL\ Bot/NeuroSOL
+cd .../NeuroSOL
 ```
 
 ### 2. Install dependencies (once):
@@ -51,7 +51,7 @@ You should see:
 
 ## 🌐 Open in Browser
 
-To test `assistant.html` in browser, run this from the same folder in a second terminal window:
+To test `index.html` in browser, run this from the same folder in a second terminal window:
 
 ```bash
 python3 -m http.server 8000
@@ -60,14 +60,14 @@ python3 -m http.server 8000
 Then open:
 
 ```
-http://localhost:8000/assistant.html
+http://localhost:8000/index.html
 ```
 
 ---
 
 ## ✅ Files to Keep
 
-- `assistant.html`
+- `index.html`
 - `assistant.js`
 - `server.js`
 - `upload.html`
